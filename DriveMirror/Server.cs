@@ -339,8 +339,14 @@ public static class Server {
                         return;
                     if (InCommand != null && !InCommand.Value)
                         continue;
-                    if (!Client.IsConnected)
+                    try
+                    {
+                        if (!Client.IsConnected)
+                            return;
+                    }
+                    catch {
                         return;
+                    }
 
                     Message(ex.ToString(), "DriveMirror Service", MessageType.Error, ButtonsType.Ok);
                 }
