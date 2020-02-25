@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Gtk;
 
@@ -9,6 +10,12 @@ namespace DriveMirror
     {
         public static async Task Main(string[] args)
         {
+#if WINDOWS
+            var PATH = Environment.GetEnvironmentVariable("PATH");
+            Environment.SetEnvironmentVariable("PATH", PATH + ";" + System.IO.Path.Combine(Environment.CurrentDirectory, "dlls"));
+            LoadLibrary("libglib-2.0-0.dll");
+            LoadLibrary("libgtk-win32-2.0-0.dll");
+#endif
             Application.Init();
             if (args?.Length > 0) {
                 for (int i = 0; i < args.Length; i++) { 
@@ -46,7 +53,11 @@ namespace DriveMirror
             win.Show();
             Application.Run();
         }
-            
+
+#if WINDOWS
+        [DllImport("kernel32", EntryPoint = "LoadLibraryW", SetLastError = true, CharSet = CharSet.Unicode)]
+        static extern IntPtr LoadLibrary(string FileName);
+#endif
 
         public static bool IsUnix
         {

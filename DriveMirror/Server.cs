@@ -122,6 +122,9 @@ public static class Server {
 
     public async static Task OpenServer()
     {
+#if DEBUG
+        System.Diagnostics.Debugger.Launch();
+#endif
         ApiCredentials = new ClientSecrets();
         string CustomCredentials = Path.Combine(AppDataDirectory, "credentials.json");
 
@@ -144,11 +147,14 @@ public static class Server {
         using (NamedPipeServerStream Server = new NamedPipeServerStream(ServerName + (ServerInstance ?? "GLOBAL")))
         {
             while (true) {
+                bool? InCommand = null;
                 try
                 {
                     if (!Server.IsConnected)
                         await Server.WaitForConnectionAsync();
+                    InCommand = false;
                     var Cmd = (Commands)await Server.ReadU16();
+                    InCommand = true;
                     switch (Cmd)
                     {
                         case Commands.PING:
@@ -332,6 +338,10 @@ public static class Server {
                     await Server.FlushAsync();
                 }
                 catch (Exception ex) {
+                    if (InCommand == null)
+                        return;
+                    if (InCommand != null && !InCommand.Value)
+                        continue;
                     if (!Client.IsConnected)
                         return;
 
