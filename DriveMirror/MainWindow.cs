@@ -10,7 +10,7 @@ public partial class MainWindow : Gtk.Window
 {
     const string RED = "FF0000";
     const string GREEN = "00FF00";
-    const string YELLOW = "FFFF00";
+    const string YELLOW = "E88700";
 
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
@@ -383,7 +383,11 @@ public partial class MainWindow : Gtk.Window
         FileChooserDialog Dialog = new FileChooserDialog("Select your new credential", this, FileChooserAction.Open);
         Dialog.Filter = new FileFilter();
         Dialog.SelectMultiple = false;
+#if WINDOWS
+        Dialog.Filter.AddPattern("*.json");
+#else
         Dialog.Filter.AddMimeType("application/json");
+#endif
         Dialog.AddButton("Cancel", ResponseType.Cancel);
         Dialog.AddButton("Open", ResponseType.Ok);
         var Result = (ResponseType)Dialog.Run();

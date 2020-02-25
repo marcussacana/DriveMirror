@@ -122,9 +122,6 @@ public static class Server {
 
     public async static Task OpenServer()
     {
-#if DEBUG
-        System.Diagnostics.Debugger.Launch();
-#endif
         ApiCredentials = new ClientSecrets();
         string CustomCredentials = Path.Combine(AppDataDirectory, "credentials.json");
 
