@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TextCopy</name>
+    </assembly>
+    <members>
+        <member name="T:TextCopy.Clipboard">
+            <summary>
+            Provides methods to place text on and retrieve text from the system Clipboard.
+            </summary>
+        </member>
+        <member name="M:TextCopy.Clipboard.GetTextAsync(System.Threading.CancellationToken)">
+            <summary>
+            Retrieves text data from the Clipboard.
+            </summary>
+        </member>
+        <member name="M:TextCopy.Clipboard.GetText">
+            <summary>
+            Retrieves text data from the Clipboard.
+            </summary>
+        </member>
+        <member name="M:TextCopy.Clipboard.SetTextAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Clears the Clipboard and then adds text data to it.
+            </summary>
+        </member>
+        <member name="M:TextCopy.Clipboard.SetText(System.String)">
+            <summary>
+            Clears the Clipboard and then adds text data to it.
+            </summary>
+        </member>
+    </members>
+</doc>

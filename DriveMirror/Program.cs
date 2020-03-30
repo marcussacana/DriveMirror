@@ -8,6 +8,9 @@ namespace DriveMirror
 {
     class MainClass
     {
+#if WINDOWS
+        public static bool IsElevated => new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+#endif
         public static async Task Main(string[] args)
         {
 #if WINDOWS
@@ -20,6 +23,9 @@ namespace DriveMirror
             if (args?.Length > 0) {
                 for (int i = 0; i < args.Length; i++) { 
                     switch (args[i].ToLower().Trim(' ', '\r', '\n', '/', '\\', '-')) {
+                        case "debug":
+                            System.Diagnostics.Debugger.Launch();
+                            break;
                         case "service":
                             await Server.OpenServer();
                             return;

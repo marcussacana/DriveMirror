@@ -14,6 +14,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
+using Google.Apis.Util.Store;
 using Gtk;
 
 public static class Server {
@@ -56,6 +57,8 @@ public static class Server {
     public const string UserA = "DriveMirror.A";
     public const string UserB = "DriveMirror.B";
 
+    public static bool Debug;
+
     static ClientSecrets ApiCredentials;
     static UserCredential CredentialsA;
     static UserCredential CredentialsB;
@@ -73,6 +76,24 @@ public static class Server {
         DriveService.Scope.DriveAppdata,
         DriveService.Scope.DriveMetadata
     };
+
+    public static string NoHttpFlagPath {
+        get {
+            return Path.Combine(AppDataDirectory, "NoHttpServer");
+        }
+    }
+
+    public static bool NoHttpMode {
+        get {
+            return System.IO.File.Exists(NoHttpFlagPath);
+        }
+    }
+
+    public static string UserCredentialDirectory {
+        get {
+            return Path.Combine(AppDataDirectory, "UserCredentials");
+        }
+    }
 
     public static string CurrentDirectory
     {
@@ -164,22 +185,36 @@ public static class Server {
                             Server.Close();
                             return;
                         case Commands.ConnectA:
-                            CredentialsA = await GoogleWebAuthorizationBroker.AuthorizeAsync(ApiCredentials, Scopes, UserA, System.Threading.CancellationToken.None);
-                            ServiceA = new DriveService(new BaseClientService.Initializer()
-                            {
-                                HttpClientInitializer = CredentialsA,
-                                ApplicationName = "DriveMirror"
-                            });
-                            UserInfoA = await ServiceA.GetUserInfo();
+							try {
+								CredentialsA = await GoogleWebAuthorizationBroker.AuthorizeAsync(ApiCredentials, Scopes, UserA, CancellationToken.None, new FileDataStore(UserCredentialDirectory), NoHttpMode ? (ICodeReceiver)new ClipboardCodeReceiver() : new LocalServerCodeReceiver());
+								ServiceA = new DriveService(new BaseClientService.Initializer()
+								{
+									HttpClientInitializer = CredentialsA,
+									ApplicationName = "DriveMirror"
+								});
+								UserInfoA = await ServiceA.GetUserInfo();
+								await Server.WriteBool(true);
+							} catch {
+								await Server.WriteBool(false);
+                                await Server.FlushAsync();
+                                throw;
+							}
                             break;
                         case Commands.ConnectB:
-                            CredentialsB = await GoogleWebAuthorizationBroker.AuthorizeAsync(ApiCredentials, Scopes, UserB, System.Threading.CancellationToken.None);
-                            ServiceB = new DriveService(new BaseClientService.Initializer()
-                            {
-                                HttpClientInitializer = CredentialsB,
-                                ApplicationName = "DriveMirror"
-                            });
-                            UserInfoB = await ServiceB.GetUserInfo();
+							try {
+								CredentialsB = await GoogleWebAuthorizationBroker.AuthorizeAsync(ApiCredentials, Scopes, UserB, CancellationToken.None, new FileDataStore(UserCredentialDirectory), NoHttpMode ? (ICodeReceiver)new ClipboardCodeReceiver() : new LocalServerCodeReceiver());
+								ServiceB = new DriveService(new BaseClientService.Initializer()
+								{
+									HttpClientInitializer = CredentialsB,
+									ApplicationName = "DriveMirror"
+								});
+								UserInfoB = await ServiceB.GetUserInfo();
+								await Server.WriteBool(true);
+							} catch {
+								await Server.WriteBool(false);
+                                await Server.FlushAsync();
+								throw;
+							}
                             break;
                         case Commands.Disconnect:
                             await CredentialsA.RevokeTokenAsync(CancellationToken.None);
@@ -335,6 +370,24 @@ public static class Server {
                     await Server.FlushAsync();
                 }
                 catch (Exception ex) {
+                    bool HttpListenError = ex.TargetSite.DeclaringType.FullName == "System.Net.HttpListener";
+#if WINDOWS
+                    if (HttpListenError && !MainClass.IsElevated) {
+                        Message("Run the DriveMirror as Adminstrator", "DriveMirror Service", MessageType.Error, ButtonsType.Ok);
+                        var CurrentProc = Process.GetCurrentProcess();
+                        foreach (var Proc in Process.GetProcessesByName(CurrentProc.ProcessName)) {
+                            if (Proc.Id == CurrentProc.Id)
+                                continue;
+                            Proc.Kill();
+                        }
+                        CurrentProc.Kill();
+                        return;
+                    }
+#endif
+                    if (HttpListenError) {
+                        System.IO.File.WriteAllText(NoHttpFlagPath, "");
+                        return;
+                    }
                     if (InCommand == null)
                         return;
                     if (InCommand != null && !InCommand.Value)
@@ -386,18 +439,20 @@ public static class Server {
         Client = null;
     }
 
-    public static async Task ConnectA()
+    public static async Task<bool> ConnectA()
     {
         await ConnectServer();
         await Client.WriteU16((ushort)Commands.ConnectA);
         await Client.FlushAsync();
+		return await Client.ReadBool();
     }
 
-    public static async Task ConnectB()
+    public static async Task<bool> ConnectB()
     {
         await ConnectServer();
         await Client.WriteU16((ushort)Commands.ConnectB);
         await Client.FlushAsync();
+		return await Client.ReadBool();
     }
 
     public static async Task Disconnect()
@@ -697,8 +752,10 @@ public static class Server {
 
         if (!FirstTime)
         {
-            await ConnectA();
-            await ConnectB();
+            while (!await ConnectA())
+                continue;
+            while (!await ConnectB())
+                continue;
             await SelectDriveA(DriveA.Id);
             await SelectDriveB(DriveB.Id);
         }
@@ -708,7 +765,17 @@ public static class Server {
     private static void RunServer()
     {
         ServerInstance = new Random().Next(0, int.MaxValue).ToString();
-        Process.Start(CurrentExecutable, $"-instance {ServerInstance} -service");
+        string Args = $"-instance {ServerInstance} -service";
+        if (Debug)
+            Args = $"-debug {Args}";
+#if WINDOWS
+        ProcessStartInfo SI = new ProcessStartInfo(CurrentExecutable, Args);
+        if (MainClass.IsElevated)
+            SI.Verb = "runas";
+#else
+        ProcessStartInfo SI = new ProcessStartInfo(CurrentExecutable, Args);
+#endif
+        Process.Start(SI);
     }
 
     private static async Task<FileInfo?> ReadFileInfo(this Stream Stream)

@@ -18,9 +18,11 @@ public partial class MainWindow : Gtk.Window
 
         bntDisconnect.Visible = false;
         bntCreateMirror.Visible = false;
+        bntDebug.Visible = System.Diagnostics.Debugger.IsAttached;
 
         LeftNodeList.AppendColumn("Name", new CellRendererText(), "text", 0);
         RightNodeList.AppendColumn("Name", new CellRendererText(), "text", 0);
+
     }
 
     bool AConnected = false;
@@ -29,7 +31,10 @@ public partial class MainWindow : Gtk.Window
     protected void OnConnectLeftClicked(object sender, EventArgs e)
     {
         SetStatus("Connecting...", YELLOW);
-        Server.ConnectA().Wait();
+        if (!Server.ConnectA().GetAwaiter().GetResult()) {
+            SetStatus("Failed", RED);
+            return;
+        }
         AConnected = true;
         bntChangeCredentials.Visible = false;
         bntConnectLeft.Visible = false;
@@ -45,7 +50,10 @@ public partial class MainWindow : Gtk.Window
     protected void OnConnectRigthClicked(object sender, EventArgs e)
     {
         SetStatus("Connecting...", YELLOW);
-        Server.ConnectB().Wait();
+        if (!Server.ConnectB().GetAwaiter().GetResult()) {
+            SetStatus("Failed", RED);
+            return;
+        }
         BConnected = true;
         bntChangeCredentials.Visible = false;
         bntConnectRigth.Visible = false;
@@ -209,7 +217,7 @@ public partial class MainWindow : Gtk.Window
             var Msg = Message("Save the progress?", "DriveMirror", MessageType.Question, ButtonsType.YesNo);
             if (Msg == ResponseType.Yes)
                 MirrorWorker.SaveProgress();
-            
+
         }
 
         Application.Quit();
@@ -284,7 +292,8 @@ public partial class MainWindow : Gtk.Window
                 ListFilesB(RigthPathBox.Text).Wait();
             };
             var Clicked = GetTreeNodeByLocation(RightNodeList, RigthStore, args.Event.X, args.Event.Y);
-            if (Clicked != null && Clicked.Name != "...") {
+            if (Clicked != null && Clicked.Name != "...")
+            {
                 MenuItem BntExclude = new MenuItem("Exclude Folder");
                 BntExclude.ButtonPressEvent += (a, e) =>
                 {
@@ -303,7 +312,8 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
-    private NameTreeNode GetTreeNodeByLocation(NodeView View, NodeStore Store, double X, double Y) {
+    private NameTreeNode GetTreeNodeByLocation(NodeView View, NodeStore Store, double X, double Y)
+    {
         View.GetPathAtPos((int)X, (int)Y, out TreePath Path);
         if (Path == null)
             return null;
@@ -397,5 +407,15 @@ public partial class MainWindow : Gtk.Window
             return;
 
         System.IO.File.Copy(File, System.IO.Path.Combine(Server.AppDataDirectory, "credentials.json"), true);
+    }
+    protected async void DebugClicked(object sender, EventArgs e)
+    {
+        if (System.Diagnostics.Debugger.IsAttached) {
+            Message("Deattach the debugger first.", "Can't Enable the Debug Mode", MessageType.Error, ButtonsType.Ok);
+            return;
+        }
+
+        Server.Debug = true;
+        await Server.CloseServer();
     }
 }
