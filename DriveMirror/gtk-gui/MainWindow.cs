@@ -19,6 +19,8 @@ public partial class MainWindow
 
 	private global::Gtk.Action bntDebug;
 
+	private global::Gtk.Action bntSetPriority;
+
 	private global::Gtk.VBox HorizontalSpliter;
 
 	private global::Gtk.MenuBar MenuBar;
@@ -82,6 +84,9 @@ public partial class MainWindow
 		this.bntDebug = new global::Gtk.Action("bntDebug", global::Mono.Unix.Catalog.GetString("Debug"), null, "gtk-preferences");
 		this.bntDebug.ShortLabel = global::Mono.Unix.Catalog.GetString("Debug");
 		w1.Add(this.bntDebug, null);
+		this.bntSetPriority = new global::Gtk.Action("bntSetPriority", global::Mono.Unix.Catalog.GetString("Set Priority"), null, "gtk-preferences");
+		this.bntSetPriority.ShortLabel = global::Mono.Unix.Catalog.GetString("Set Priority");
+		w1.Add(this.bntSetPriority, null);
 		this.UIManager.InsertActionGroup(w1, 0);
 		this.AddAccelGroup(this.UIManager.AccelGroup);
 		this.Name = "MainWindow";
@@ -92,7 +97,7 @@ public partial class MainWindow
 		this.HorizontalSpliter.Name = "HorizontalSpliter";
 		this.HorizontalSpliter.Spacing = 6;
 		// Container child HorizontalSpliter.Gtk.Box+BoxChild
-		this.UIManager.AddUiFromString(@"<ui><menubar name='MenuBar'><menu name='DriveMenu' action='DriveMenu'><menuitem name='bntConnectLeft' action='bntConnectLeft'/><menuitem name='bntConnectRigth' action='bntConnectRigth'/><menuitem name='bntDisconnect' action='bntDisconnect'/><menuitem name='bntCreateMirror' action='bntCreateMirror'/><menuitem name='bntChangeCredentials' action='bntChangeCredentials'/><menuitem name='bntDebug' action='bntDebug'/></menu></menubar></ui>");
+		this.UIManager.AddUiFromString(@"<ui><menubar name='MenuBar'><menu name='DriveMenu' action='DriveMenu'><menuitem name='bntConnectLeft' action='bntConnectLeft'/><menuitem name='bntConnectRigth' action='bntConnectRigth'/><menuitem name='bntDisconnect' action='bntDisconnect'/><menuitem name='bntCreateMirror' action='bntCreateMirror'/><menuitem name='bntChangeCredentials' action='bntChangeCredentials'/><menuitem name='bntDebug' action='bntDebug'/><menuitem name='bntSetPriority' action='bntSetPriority'/></menu></menubar></ui>");
 		this.MenuBar = ((global::Gtk.MenuBar)(this.UIManager.GetWidget("/MenuBar")));
 		this.MenuBar.Name = "MenuBar";
 		this.HorizontalSpliter.Add(this.MenuBar);
@@ -246,6 +251,7 @@ public partial class MainWindow
 		this.bntConnectRigth.Activated += new global::System.EventHandler(this.OnConnectRigthClicked);
 		this.bntChangeCredentials.Activated += new global::System.EventHandler(this.ChangeCredentialsClicked);
 		this.bntDebug.Activated += new global::System.EventHandler(this.DebugClicked);
+		this.bntSetPriority.Activated += new global::System.EventHandler(this.SetPriorityClicked);
 		this.bntLeftOpen.Clicked += new global::System.EventHandler(this.OnLeftOpenClicked);
 		this.LeftNodeList.RowActivated += new global::Gtk.RowActivatedHandler(this.OnLeftRowActivated);
 		this.LeftNodeList.ButtonReleaseEvent += new global::Gtk.ButtonReleaseEventHandler(this.OnLeftClickRelease);

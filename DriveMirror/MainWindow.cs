@@ -19,6 +19,7 @@ public partial class MainWindow : Gtk.Window
         bntDisconnect.Visible = false;
         bntCreateMirror.Visible = false;
         bntDebug.Visible = System.Diagnostics.Debugger.IsAttached;
+        bntSetPriority.Visible = true;
 
         LeftNodeList.AppendColumn("Name", new CellRendererText(), "text", 0);
         RightNodeList.AppendColumn("Name", new CellRendererText(), "text", 0);
@@ -417,5 +418,25 @@ public partial class MainWindow : Gtk.Window
 
         Server.Debug = true;
         await Server.CloseServer();
+    }
+
+    protected void SetPriorityClicked(object sender, EventArgs e)
+    {
+        var Resp = Message("Press YES, to give priority to the files in the left folder\nPress NO, to give priority to the files in the rigth folder\nClose this window, to give priority to the newer files", "DriveMirror", MessageType.Question, ButtonsType.YesNo);
+        switch (Resp)
+        {
+            case ResponseType.Yes:
+                MirrorWorker.Priority = true;
+                Message("Now the files from the left folder will never be overwrited.", "DriveMirror", MessageType.Info, ButtonsType.Ok);
+                break;
+            case ResponseType.No:
+                MirrorWorker.Priority = false;
+                Message("Now the files from the rigth folder will never be overwrited.", "DriveMirror", MessageType.Info, ButtonsType.Ok);
+                break;
+            default:
+                MirrorWorker.Priority = null;
+                Message("Now the newer files will never be overwrited.", "DriveMirror", MessageType.Info, ButtonsType.Ok);
+                break;
+        }
     }
 }

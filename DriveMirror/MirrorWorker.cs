@@ -5,11 +5,19 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Dasync.Collections;
+using Gtk;
 
 namespace DriveMirror
 {
     internal static class MirrorWorker
     {
+        /// <summary>
+        /// <list type="">True  = Files from DirA will have priority</list> 
+        /// <list type="">False = Files from DirB will have priority</list> 
+        /// <list type="">null  = the newest file will have priority</list> 
+        /// </summary>
+        public static bool? Priority = null;
+
         private static List<SyncQuery> Queries;
         private static List<SyncQuery> FinishedQueries;
 
@@ -207,11 +215,17 @@ namespace DriveMirror
 
                                  await SendStatus("Syncrying File: " + FileA);
 
-                                 if (FB != null)
+                                 if (FB != null && !Priority.HasValue)
                                  {
                                      if (FB?.ModifiedTime > FA?.ModifiedTime)
                                          return;
                                      await Server.DeleteFileB(FB);
+                                 }
+                                 else if (FB != null) {
+                                     if (Priority.Value)
+                                         await Server.DeleteFileB(FB);
+                                     else
+                                         return;
                                  }
 
                                  var Tmp = new FileInfo();
@@ -267,13 +281,19 @@ namespace DriveMirror
 
                                 await SendStatus("Syncrying File: " + FileA);
 
-                                if (FA != null)
+                                if (FA != null && !Priority.HasValue)
                                 {
                                     if (FA?.ModifiedTime > FB?.ModifiedTime)
                                         return;
                                     await Server.DeleteFileA(FA);
                                 }
-
+                                else if (FA != null)
+                                {
+                                    if (!Priority.Value)
+                                        await Server.DeleteFileA(FA);
+                                    else
+                                        return;
+                                }
 
                                 var Tmp = new FileInfo();
                                 Tmp.Name = x?.Name;
