@@ -15,6 +15,6 @@ A program that aim to clone 2 folders in your drive account without reupload it.
 5 - In the Rigth side click at Open, then select Your secondary Drive/Shared Drive  
 6 - In the Rigth side browse to the directory that you want mirror with the left side  
 7 - (Optional) Click at 'Drive > Set Priority' to select the files of what side that can't be overwrited  
-7 - Click at 'Drive > Create Mirror' to begin the task
+8 - Click at 'Drive > Create Mirror' to begin the task
 
 ## Created by marcussacana
